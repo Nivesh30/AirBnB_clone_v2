@@ -1,28 +1,34 @@
 #!/usr/bin/python3
-"""
-Fabric script (100-clean_web_static.py) to delete out-of-date archives
-"""
-from fabric.api import env, run, local
-from datetime import datetime
-import os
+"""web server distribution"""
+from fabric.api import *
+from fabric.state import commands, connections
+import os.path
 
-env.hosts = ['<IP web-01>', '<IP web-02>']
+env.user = 'ubuntu'
+env.hosts = ["104.196.155.240", "34.74.146.120"]
+env.key_filename = "~/id_rsa"
 
 
 def do_clean(number=0):
-    """Deletes out-of-date archives"""
+    """deletes out-of-date archives"""
+    local('ls -t ~/AirBnB_Clone_V2/versions/').split()
+    with cd("/data/web_static/releases"):
+        target_R = sudo("ls -t .").split()
+    paths = "/data/web_static/releases"
     number = int(number)
-    if number < 2:
-        number = 1
+    if number == 0:
+        num = 1
     else:
-        number += 1
-
-    local_archives = sorted(os.listdir("versions"))
-    delete_local = local_archives[:-number]
-    for archive in delete_local:
-        local("rm versions/{}".format(archive))
-
-    remote_archives = run("ls -1 /data/web_static/releases").split()
-    delete_remote = sorted(remote_archives)[:-number]
-    for archive in delete_remote:
-        run("rm -rf /data/web_static/releases/{}".format(archive))
+        num = number
+    if len(target_R) > 0:
+        if len(target) == number or len(target) == 0:
+            pass
+        else:
+            cl = target[num:]
+            for i in range(len(cl)):
+                local('rm -f ~/AirBnB_Clone_V2/versions/{}'.format(target[-1]))
+        rem = target_R[num:]
+        for j in range(len(rem)):
+            sudo('rm -rf {}/{}'.format(paths, rem[-1].strip(".tgz")))
+    else:
+        pass
