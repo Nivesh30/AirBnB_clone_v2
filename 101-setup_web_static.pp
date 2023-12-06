@@ -1,6 +1,63 @@
-# setup web server for deployment
+# Ensure Nginx package is installed
+package { 'nginx':
+  ensure => installed,
+}
 
-exec { 'server setup':
-  command  => 'sudo apt-get -y update && sudo apt-get -y install nginx && sudo service nginx start && sudo mkdir -p /data/web_static/shared/ && sudo mkdir -p /data/web_static/releases/test/ && echo "Holberton School" | sudo tee /data/web_static/releases/test/index.html > /dev/null && sudo ln -sf /data/web_static/releases/test/ /data/web_static/current && sudo chown -R ubuntu:ubuntu /data/ && sudo sed -i \'44i \\n\tlocation /hbnb_static {\n\t\talias /data/web_static/current/;\n\t}\' /etc/nginx/sites-available/default && sudo service nginx restart',
-  provider => shell,
+# Ensure required directories exist
+file { '/data':
+  ensure => directory,
+}
+
+file { '/data/web_static':
+  ensure => directory,
+}
+
+file { '/data/web_static/releases':
+  ensure => directory,
+}
+
+file { '/data/web_static/shared':
+  ensure => directory,
+}
+
+file { '/data/web_static/releases/test':
+  ensure => directory,
+}
+
+# Create a fake HTML file for testing
+file { '/data/web_static/releases/test/index.html':
+  content => '<html>
+  <head>
+  </head>
+  <body>
+    Holberton School
+  </body>
+</html>',
+}
+
+# Create or recreate the symbolic link
+file { '/data/web_static/current':
+  ensure  => link,
+  target  => '/data/web_static/releases/test',
+  require => File['/data/web_static/releases/test/index.html'],
+}
+
+# Change ownership of the /data/ folder recursively to ubuntu user and group
+exec { 'change_ownership':
+  command => 'chown -R ubuntu:ubuntu /data/',
+  path    => ['/bin', '/usr/bin/'],
+}
+
+# Update Nginx configuration
+file { '/etc/nginx/sites-available/default':
+  content => template('path/to/nginx_template.erb'),
+  require => Package['nginx'],
+  notify  => Service['nginx'],
+}
+
+# Restart Nginx
+service { 'nginx':
+  ensure    => running,
+  enable    => true,
+  subscribe => File['/etc/nginx/sites-available/default'],
 }
